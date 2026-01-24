@@ -9,7 +9,7 @@ def valid_candidate():
 
 @pytest.fixture
 def valid_offer():
-    return JobOffer("Senior Dev", 10000, 20000)
+    return JobOffer("Senior Dev", 10000, 20000, 5)
 
 @pytest.fixture
 def application(valid_candidate, valid_offer):
@@ -26,6 +26,14 @@ def test_create_application_salary_wrong(valid_offer):
     
     assert app.status == "REJECTED"
     assert app.rejection_reason == "Salary expectations too high"
+
+def test_create_application_experience_too_low(valid_offer):
+    young_candidate = Candidate("Jan", "Mlody", "jan@test.pl", 3, 10000.0)
+
+    app = Application(young_candidate, valid_offer)
+
+    assert app.status == "REJECTED"
+    assert app.rejection_reason == "Too little experience"
 
 def test_create_application_invalid_candidate(valid_offer):
     invalid_candidate = Candidate("Jan", "Kowalski", "brak_malpy.pl", 5, 10000.0)
