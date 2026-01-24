@@ -29,5 +29,23 @@ class Application:
             self.rejection_reason = "Offer is closed"
             return
 
-        
+    # Metoda pozwalająca zmieniać etap rekrutacji, pilujemy też żeby działo 
+    # się to w logiczny sposób.
+    def advance_status(self, new_status):
+        # Dozwolone przejścia
+        allowed_transitions = {
+            "NEW": ["INTERVIEW", "REJECTED"],   # Nową aplikację możemy odrzucić lub przenieść dalej
+            "INTERVIEW": ["HIRED", "REJECTED"], # Po rozmowie kwalifikacyjnej możemy zatrudnić lub odrzucić
+            "HIRED": [],    # Z zatrudnionego nie zmieniamy statusu
+            "REJECTED": []  # Z odrzuconego nie można przywrócić
+        }
+
+        # Logika warunkowa sprawdzająca poprawność przejścia
+        if new_status in allowed_transitions.get(self.status, []):
+            self.status = new_status
+            return True
+        return False
+    
+
+
    
