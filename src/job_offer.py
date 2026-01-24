@@ -1,7 +1,8 @@
 class JobOffer:
-    def __init__(self, title, min_salary, max_salary):
+    def __init__(self, title, min_salary, max_salary, min_yoe=0):
         self.title = title
         self.status = "OPEN"
+        self.min_yoe = min_yoe 
         self.applications = []  # Lista aplikacji na tę ofertę.
         
         # Walidacja widełek płacowych

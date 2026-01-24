@@ -22,6 +22,11 @@ class Application:
             self.status = "REJECTED"
             self.rejection_reason = "Salary expectations too high"
             return
+        
+        if self.job_offer.min_yoe > self.candidate.experience:
+            self.status = "REJECTED"
+            self.rejection_reason = "Too little experience"
+            return
 
         # Jeśli oferta jest już zamknięta, też odrzucamy
         if self.job_offer.status != "OPEN":
