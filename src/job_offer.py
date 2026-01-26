@@ -26,3 +26,11 @@ class JobOffer:
     # Zamykanie oferty
     def close_offer(self):
         self.status = "CLOSED"
+
+    def add_application(self, application):
+        for existing_app in self.applications:
+            if existing_app.candidate.email == application.candidate.email:
+                return False
+        
+        self.applications.append(application)
+        return True

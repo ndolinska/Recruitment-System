@@ -50,3 +50,10 @@ def test_create_application_closed_offer(valid_candidate, valid_offer):
     
     assert app.status == "REJECTED"
     assert app.rejection_reason == "Offer is closed"
+
+def test_add_application_to_job_offer(valid_candidate, valid_offer):
+    app = Application(valid_candidate, valid_offer)
+    try1 = valid_offer.add_application(app)
+    try2 = valid_offer.add_application(app)
+    assert try1 == True
+    assert try2 == False #Nie zezwalamy na duplikat w tej samej ofercie
