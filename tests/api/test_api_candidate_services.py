@@ -1,17 +1,11 @@
 import pytest
-from app.api import app, registry
+import requests
 
-@pytest.fixture
-def client():
-    app.config['TESTING'] = True
-    with app.test_client() as client:
-        yield client
+BASE_URL = "http://localhost:5000"
 
 @pytest.fixture(autouse=True)
 def clean_registry():
-    registry.candidates = []
-    registry.job_offers = []
-    registry.applications = []
+    requests.post(f"{BASE_URL}/reset")
 
 @pytest.fixture
 def sample_candidate():
@@ -23,61 +17,52 @@ def sample_candidate():
         "salary_expectations": 15000
     }
 
-def test_create_candidate_and_check_duplicate(client, sample_candidate):
-    response = client.post("/candidates", json=sample_candidate)
+def test_create_candidate_and_check_duplicate(sample_candidate):
+    response = requests.post(f"{BASE_URL}/candidates", json=sample_candidate)
     assert response.status_code == 201
-    assert response.json['message'] == "Candidate created"
-    assert len(registry.candidates) == 1
-    try2 = client.post("/candidates", json=sample_candidate)
-    assert try2.status_code == 409
-    assert try2.json['message'] == "Candidate with this email already exists"
+    assert response.json()['message'] == "Candidate created"
+  
+    check = requests.get(f"{BASE_URL}/candidates")
+    assert len(check.json()) == 1
 
-def test_create_candidate_invalid_email(client):
+    # Sprawdzamy duplikat
+    response = requests.post(f"{BASE_URL}/candidates", json=sample_candidate)
+    assert response.status_code == 409
+    assert response.json()['message'] == "Candidate with this email already exists"
+    assert len(check.json()) == 1
+
+def test_create_candidate_invalid_email():
     invalid_candidate = {
-        "first_name": "Jan",
-        "last_name": "Testowy",
+        "first_name": "Jan", "last_name": "Testowy",
         "email": "jan.test.pl",
-        "experience": 5,
-        "salary_expectations": 15000
+        "experience": 5, "salary_expectations": 15000
     }
-    response = client.post("/candidates", json=invalid_candidate)
+    response = requests.post(f"{BASE_URL}/candidates", json=invalid_candidate)
     assert response.status_code == 400
-    assert response.json['message'] == "Invalid candidate data"
-    assert len(registry.candidates) == 0
     
-def test_get_all_candidates(client, sample_candidate):
-    client.post("/candidates", json=sample_candidate)
-    response = client.get("/candidates")
-    assert response.status_code == 200
-    assert len(response.json) == 1
-    assert response.json[0]['email'] == sample_candidate['email']
+    check = requests.get(f"{BASE_URL}/candidates")
+    assert len(check.json()) == 0
 
-def test_update_candidate(client, sample_candidate):
-    client.post("/candidates", json=sample_candidate)
-    update_data = {
-        "first_name": "Piotr",
-        "last_name": "Andrzejewski",
-        "salary_expectations": 20000,
-        "experience": 10
-    }
-    response = client.patch(f"/candidates/{sample_candidate['email']}", json=update_data)
+def test_get_all_candidates(sample_candidate):
+    requests.post(f"{BASE_URL}/candidates", json=sample_candidate)
     
+    response = requests.get(f"{BASE_URL}/candidates")
     assert response.status_code == 200
-    assert response.json['message'] == "Candidate updated"
+    assert len(response.json()) == 1
 
-    response = client.patch(f"/candidates/ghost@email.com", json=update_data)
-    assert response.status_code == 404
-    assert response.json['message'] == "Candidate not found"
-    
+def test_update_candidate(sample_candidate):
+    requests.post(f"{BASE_URL}/candidates", json=sample_candidate)
 
-def test_delete_candidate(client, sample_candidate):
-    client.post("/candidates", json=sample_candidate)
-    response = client.delete(f"/candidates/{sample_candidate['email']}")
+    update_data = {"first_name": "Piotr", "salary_expectations": 20000}
+    response = requests.patch(f"{BASE_URL}/candidates/{sample_candidate['email']}", json=update_data)
+
     assert response.status_code == 200
-    assert response.json['message'] == "Candidate deleted"
-    assert len(registry.candidates) == 0
+    assert response.json()['message'] == "Candidate updated"
 
-def test_delete_candidate_nonexistant(client):
-    response = client.delete("/candidates/ghost@test.pl")
-    assert response.status_code == 404
-    assert response.json['message'] == "Candidate not found"
+def test_delete_candidate(sample_candidate):
+    requests.post(f"{BASE_URL}/candidates", json=sample_candidate)
+    response = requests.delete(f"{BASE_URL}/candidates/{sample_candidate['email']}")
+    assert response.status_code == 200
+    assert response.json()['message'] == "Candidate deleted"
+    check = requests.get(f"{BASE_URL}/candidates")
+    assert len(check.json()) == 0

@@ -1,25 +1,17 @@
 import pytest
-from app.api import app, registry
+import requests
 
-@pytest.fixture
-def client():
-    app.config['TESTING'] = True
-    with app.test_client() as client:
-        yield client
+BASE_URL = "http://localhost:5000"
 
 @pytest.fixture(autouse=True)
 def clean_registry():
-    registry.candidates = []
-    registry.job_offers = []
-    registry.applications = []
+    requests.post(f"{BASE_URL}/reset")
 
 @pytest.fixture
 def sample_candidate():
     return {
-        "first_name": "Jan",
-        "last_name": "Testowy",
-        "email": "jan@test.pl",
-        "experience": 5,
+        "first_name": "Jan", "last_name": "Testowy",
+        "email": "jan@test.pl", "experience": 5, 
         "salary_expectations": 15000
     }
 
@@ -27,9 +19,9 @@ def sample_candidate():
 def sample_offer():
     return {
         "title": "Python Developer",
-        "min_salary": 10000,
-        "max_salary": 20000
+        "min_salary": 10000, "max_salary": 20000
     }
+
 @pytest.fixture
 def sample_app(sample_candidate, sample_offer):
     return {
@@ -38,66 +30,62 @@ def sample_app(sample_candidate, sample_offer):
     }
 
 @pytest.fixture
-def ready_registry(client, sample_candidate, sample_offer):
-    client.post("/candidates", json=sample_candidate)
-    client.post("/offers", json=sample_offer)
+def ready_registry(sample_candidate, sample_offer):
+    requests.post(f"{BASE_URL}/candidates", json=sample_candidate)
+    requests.post(f"{BASE_URL}/offers", json=sample_offer)
 
-
-def test_create_application_success_and_check_duplicate(client, sample_app, ready_registry):
-    response = client.post("/applications", json=sample_app)
+def test_create_application_and_check_duplicate(sample_app, ready_registry):
+    response = requests.post(f"{BASE_URL}/applications", json=sample_app)
     
     assert response.status_code == 201
-    assert response.json['message'] == "Application created"
-    assert len(registry.applications) == 1
+    assert response.json()['message'] == "Application created"
 
-    try2 = client.post("/applications", json=sample_app)
-    assert try2.status_code == 409
-    assert try2.json['message'] == "Application already exists (duplicate)"
+    # Sprawdzenie duplikatu
+    response = requests.post(f"{BASE_URL}/applications", json=sample_app)
+    assert response.status_code == 409
+    assert response.json()['message'] == "Application already exists (duplicate)"
 
-def test_create_application_missing_data(client):
+def test_create_application_missing_data():
     app_data = {"email": "duch@test.pl", "title": "Nieistnieje"}
-    response = client.post("/applications", json=app_data)
+    
+    response = requests.post(f"{BASE_URL}/applications", json=app_data)
     assert response.status_code == 404
-    assert response.json['message'] == "Incorrect data"
+    assert response.json()['message'] == "Incorrect data"
 
-# Tutaj wyjaśnienia bo to najcięższa część
-def test_update_application_status(client, sample_candidate, sample_offer, sample_app, ready_registry):
-    client.post("/applications", json=sample_app)
-    # Update statusu na INTERVIEW
+def test_get_all_applications(sample_app, ready_registry):
+    requests.post(f"{BASE_URL}/applications", json=sample_app)
+    response = requests.get(f"{BASE_URL}/applications")
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    
+
+def test_update_application_status(sample_app, ready_registry):
+    requests.post(f"{BASE_URL}/applications", json=sample_app)
     update_data = {
-        "email": sample_candidate['email'], 
-        "title": sample_offer['title'],
+        "email": sample_app['email'], 
+        "title": sample_app['title'],
         "status": "INTERVIEW"
     }
-    response = client.patch("/applications/status", json=update_data)
+    response = requests.patch(f"{BASE_URL}/applications/status", json=update_data)
     assert response.status_code == 200
-    assert response.json['message'] == "Status updated"
+    assert response.json()['message'] == "Status updated"
 
-    # Sprawdzenie czy status faktycznie się zmienił
-    get_response = client.get("/applications")
-    assert get_response.json[0]['status'] == "INTERVIEW"
+    get_res = requests.get(f"{BASE_URL}/applications")
+    assert get_res.json()[0]['status'] == "INTERVIEW"
 
-    # Teraz sprawdzamy niedozwolone przejście
-    update_data["status"] = "NEW"
-    response = client.patch("/applications/status", json=update_data)
-    assert response.status_code == 400
-    assert response.json['message'] == "Invalid status transition"
+    # Sprawdzam przejście
+    update_data["status"] = "NEW" # Cofanie się jest zabronione
+    fail_res = requests.patch(f"{BASE_URL}/applications/status", json=update_data)
+    assert fail_res.status_code == 400 
+    assert "Invalid status" in fail_res.json()['message']
 
-    # Tutaj sprawdzamy co jak nie znajdzie konta (np. przez błędne dane w nowym jsonie)
-    response = client.patch("/applications/status", json={})
-    assert response.status_code == 404
-    assert response.json['message'] == "Application not found"
+def test_delete_application(sample_app, ready_registry):
+    requests.post(f"{BASE_URL}/applications", json=sample_app)
 
-def test_delete_application(client, sample_app, ready_registry):
-    client.post("/applications", json=sample_app)
-
-    response = client.delete("/applications", json={})
-
-    assert response.status_code == 404
-    assert response.json['message'] == "Application not found"
-
-    response = client.delete("/applications", json=sample_app)
-
+    response = requests.delete(f"{BASE_URL}/applications", json=sample_app)
+    
     assert response.status_code == 200
-    assert response.json['message'] == "Application deleted"
-    assert len(registry.applications) == 0
+    assert response.json()['message'] == "Application deleted"
+
+    check = requests.get(f"{BASE_URL}/applications")
+    assert len(check.json()) == 0

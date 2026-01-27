@@ -155,7 +155,6 @@ def update_status():
     app = registry.search_application(data.get('email'), data.get('title'))
     if not app:
         return jsonify({"message": "Application not found"}), 404
-
     if app.advance_status(data.get('status')):
         return jsonify({"message": "Status updated"}), 200
     else:
@@ -173,3 +172,12 @@ def delete_application():
 
     registry.remove_application(app)
     return jsonify({"message": "Application deleted"}), 200
+
+# Dodajemy endpoint do czyszczenia registry który będzie pomocny w testach
+# Szczególnie dlatego że jesteśmy ograniczeni do testów bez importu kodu
+@app.route("/reset", methods=['POST'])
+def reset_registry():
+    registry.candidates = []
+    registry.job_offers = []
+    registry.applications = []
+    return jsonify({"message": "Registry cleared"}), 200
