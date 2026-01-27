@@ -36,6 +36,8 @@ class RecruitmentRegistry:
     def add_application(self, app):
         if app.job_offer.add_application(app):
             self.applications.append(app)
+            return True
+        return False
 
     def search_application(self, email, title):
         for app in self.applications:
@@ -43,12 +45,8 @@ class RecruitmentRegistry:
                 return app
         return None
     
-    def get_applications_by_status(self, goal_status):
-        res = []
-        for app in self.applications:
-            if app.status == goal_status:
-                res.append(app)
-        return res
+    def get_all_applications(self):
+        return self.applications
     
     def remove_application(self, app):
         if app in self.applications:
