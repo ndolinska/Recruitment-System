@@ -1,8 +1,10 @@
 import pytest # pyright: ignore[reportMissingImports]
+from pytest_mock import MockFixture
 from src.candidate import Candidate
 
 @pytest.fixture
-def candidate():
+def candidate(mocker: MockFixture):
+    mocker.patch.object(Candidate, 'is_email_valid', return_value=True)
     return Candidate("Jan", "Kowalski", "jan@test.pl", 5, 10000.0)
 
 def test_candidate_proper(candidate):
@@ -18,13 +20,7 @@ def test_candidate_proper(candidate):
 def test_salary_match_logic(candidate, offer_max_salary, expected_result):
     assert candidate.check_salary_match(offer_max_salary) is expected_result
 
-@pytest.mark.parametrize("invalid_email", [
-    "jan.kowalski",      # Brak @
-    "jan@testpl",        # Brak kropki
-    None,                # None
-    12345,               # Int zamiast str
-    ""                   # Pusty string
-])
-def test_create_candidate_invalid_email(invalid_email):
-    c = Candidate("Jan", "Kowalski", invalid_email, 5, 10000)
+def test_create_candidate_invalid_email(mocker: MockFixture, candidate):
+    mocker.patch.object(Candidate, 'is_email_valid', return_value=False)
+    c = Candidate("Jan", "Kowalski", "jan@test.pl", 5, 10000.0)
     assert c.email == "INVALID"

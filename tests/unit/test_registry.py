@@ -1,4 +1,5 @@
 import pytest # pyright: ignore[reportMissingImports]
+from pytest_mock import MockFixture
 from src.recruitment_registry import RecruitmentRegistry
 from src.candidate import Candidate
 from src.job_offer import JobOffer
@@ -9,7 +10,8 @@ def registry():
     return RecruitmentRegistry()
 
 @pytest.fixture
-def sample_candidate():
+def sample_candidate(mocker: MockFixture):
+    mocker.patch.object(Candidate, 'is_email_valid', return_value=True)
     return Candidate("Jan", "Testowy", "jan@test.pl", 5, 12000)
 
 @pytest.fixture
