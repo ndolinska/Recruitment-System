@@ -65,7 +65,7 @@ def delete_offer(title):
     if registry.remove_job_offer(title):
         return jsonify({"message": "Offer deleted"}), 200
     
-    return jsonify({"message": "Offer not found"}), 404 
+    return jsonify({"message": "Offer not found or needs to be closed first. Try to use PATCH."}), 404 
 
 # Endpoint applications
 @app.route("/applications", methods=['POST'])
