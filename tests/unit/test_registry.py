@@ -20,19 +20,6 @@ def sample_offer():
 def sample_application(sample_candidate, sample_offer):
     return Application(sample_candidate, sample_offer)
 
-# Testy rejestru kandydatów
-def test_add_and_search_candidate(registry, sample_candidate):
-    registry.add_candidate(sample_candidate)
-    
-    assert len(registry.get_all_candidates()) == 1
-
-    found = registry.search_candidate("jan@test.pl")
-    assert found == sample_candidate
-
-def test_search_candidate_not_found(registry):
-    result = registry.search_candidate("ghost@test.pl")
-    assert result is None
-
 # Testy rejestru ofert
 def test_add_and_search_offer(registry, sample_offer):
     registry.add_job_offer(sample_offer)
@@ -46,6 +33,17 @@ def test_search_offer_not_found(registry):
     result = registry.search_job_offer("Mid Dev")
     assert result is None
 
+def test_delete_offer_and_application(registry, sample_offer, sample_application):
+    registry.add_job_offer(sample_offer)
+    assert len(registry.get_all_offers()) == 1
+    registry.add_application(sample_application) 
+    assert len(registry.get_all_applications()) == 1
+
+    registry.remove_job_offer(sample_offer.title)
+    assert len(registry.get_all_offers()) == 0
+    assert len(registry.get_all_applications()) == 0
+    assert registry.remove_job_offer(sample_offer.title) == False
+    
 # Testy rejestru zgłoszeń
 def test_add_and_search_application(registry, sample_application):
     registry.add_application(sample_application)

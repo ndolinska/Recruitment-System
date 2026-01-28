@@ -2,26 +2,13 @@ from src.application import Application
 
 class RecruitmentRegistry:
     def __init__(self):
-        self.candidates = []
         self.job_offers = []
         self.applications = []
 
-    # Obsługa kandydatów
-    def add_candidate(self, candidate):
-        self.candidates.append(candidate)
-
-    def search_candidate(self, email):
-        for candidate in self.candidates:
-            if candidate.email == email:
-                return candidate
-        return None
-    
-    def get_all_candidates(self):
-        return self.candidates
-    
     # Obsługa ofert pracy
     def add_job_offer(self, offer):
-        self.job_offers.append(offer)
+        if not self.search_job_offer(offer.title):
+            self.job_offers.append(offer)
     
     def search_job_offer(self, title):
         for offer in self.job_offers:
@@ -31,6 +18,14 @@ class RecruitmentRegistry:
     
     def get_all_offers(self):
         return self.job_offers
+    
+    def remove_job_offer(self, title):
+        offer = self.search_job_offer(title)
+        if not offer:
+            return False
+        self.applications = [app for app in self.applications if app.job_offer.title != title]
+        self.job_offers.remove(offer)
+        return True
     
     # Obsługa aplikacji
     def add_application(self, app):

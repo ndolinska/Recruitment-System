@@ -19,22 +19,17 @@ def sample_candidate():
 def sample_offer():
     return {
         "title": "Python Developer",
-        "min_salary": 10000, "max_salary": 20000
+        "min_salary": 10000,
+        "max_salary": 20000,
+        "min_yoe": 2
     }
 
 @pytest.fixture
 def sample_app(sample_candidate, sample_offer):
-    return {
-        "email": sample_candidate['email'],
-        "title": sample_offer['title']
-    }
-
-@pytest.fixture
-def ready_registry(sample_candidate, sample_offer):
-    requests.post(f"{BASE_URL}/candidates", json=sample_candidate)
     requests.post(f"{BASE_URL}/offers", json=sample_offer)
+    return {**sample_candidate, "title": sample_offer["title"]}
 
-def test_create_application_and_check_duplicate(sample_app, ready_registry):
+def test_create_application_and_check_duplicate(sample_app):
     response = requests.post(f"{BASE_URL}/applications", json=sample_app)
     
     assert response.status_code == 201
@@ -52,14 +47,14 @@ def test_create_application_missing_data():
     assert response.status_code == 404
     assert response.json()['message'] == "Incorrect data"
 
-def test_get_all_applications(sample_app, ready_registry):
+def test_get_all_applications(sample_app):
     requests.post(f"{BASE_URL}/applications", json=sample_app)
     response = requests.get(f"{BASE_URL}/applications")
     assert response.status_code == 200
     assert len(response.json()) == 1
     
 
-def test_update_application_status(sample_app, ready_registry):
+def test_update_application_status(sample_app):
     requests.post(f"{BASE_URL}/applications", json=sample_app)
     update_data = {
         "email": sample_app['email'], 
@@ -79,7 +74,7 @@ def test_update_application_status(sample_app, ready_registry):
     assert fail_res.status_code == 400 
     assert "Invalid status" in fail_res.json()['message']
 
-def test_delete_application(sample_app, ready_registry):
+def test_delete_application_and_reapply(sample_app):
     requests.post(f"{BASE_URL}/applications", json=sample_app)
 
     response = requests.delete(f"{BASE_URL}/applications", json=sample_app)
@@ -89,3 +84,7 @@ def test_delete_application(sample_app, ready_registry):
 
     check = requests.get(f"{BASE_URL}/applications")
     assert len(check.json()) == 0
+
+    response = requests.post(f"{BASE_URL}/applications", json=sample_app)
+    assert response.status_code == 201
+    assert response.json()["message"] == "Application created"
