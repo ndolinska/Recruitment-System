@@ -21,7 +21,7 @@ class RecruitmentRegistry:
     
     def remove_job_offer(self, title):
         offer = self.search_job_offer(title)
-        if not offer:
+        if not offer or offer.status == ["OPEN"]:
             return False
         self.applications = [app for app in self.applications if app.job_offer.title != title]
         self.job_offers.remove(offer)

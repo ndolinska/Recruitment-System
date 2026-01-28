@@ -26,6 +26,10 @@ class JobOffer:
     # Zamykanie oferty
     def close_offer(self):
         self.status = "CLOSED"
+        for app in self.applications:
+            if app.status in ["NEW", "INTERVIEW"]:
+                app.status = "REJECTED"
+                app.rejection_reason = "Offer has been closed"
 
     def add_application(self, application):
         for existing_app in self.applications:
