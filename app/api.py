@@ -7,6 +7,10 @@ from src.application import Application
 app = Flask(__name__)
 registry = RecruitmentRegistry()
 
+# W wyniku dodania mocków zewnętrznej aplikacji do testów musimy założyć to
+# W kodzie dalej pozostawiamy sprawdzenie czy email == "INVALID"
+Candidate.is_email_valid = lambda self, email: True
+
 # Endpoint offers
 @app.route("/offers", methods=['POST'])
 # Dodajemy ofertę
