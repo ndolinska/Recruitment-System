@@ -102,6 +102,7 @@ def get_all_applications():
     apps = registry.get_all_applications()
     result = [{
         "candidate": f"{a.candidate.first_name} {a.candidate.last_name}",
+        "email": a.candidate.email,
         "offer": a.job_offer.title,
         "status": a.status,
         "reason": a.rejection_reason
